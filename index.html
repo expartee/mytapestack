@@ -78,6 +78,7 @@ button { font: inherit; color: inherit; }
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  overflow-anchor: none;   /* the pile moves its own tapes (as Safari does); the browser does not shift the scroll */
   padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
   padding-bottom: calc(var(--dock-h) + env(safe-area-inset-bottom, 0px) + 84px);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -91,7 +92,8 @@ button { font: inherit; color: inherit; }
   transition: transform .7s var(--ease);
 }
 .shelf-inner { max-width: 420px; margin: 0 auto; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-.app.covered .shelf-inner { visibility: hidden; }
+/* behind the open deck the tapes are not drawn; they keep their styles, so they come back fast */
+.app.covered .stack-item { content-visibility: hidden; }
 .shelf-head {
   display: flex;
   align-items: center;
@@ -124,7 +126,6 @@ button { font: inherit; color: inherit; }
 }
 .stack-item { position: relative; width: var(--tape-w); max-width: 100%; aspect-ratio: 1000 / 638; }
 .stack-item + .stack-item { margin-top: calc(var(--tape-w) * -0.3828); }
-.stack-item { transition: margin-top .38s var(--ease); }
 .stack-item.gone { margin-top: calc(var(--tape-w) * -0.638); }
 .stack-item.gone:first-child { margin-top: calc(var(--tape-w) * -0.2552); }
 .stack-item.raised { z-index: 60 !important; }
@@ -1151,15 +1152,20 @@ button { font: inherit; color: inherit; }
     tape({ id: 'el-bloc', pick: true, title: 'EL BLOC', sub: 'track 3', file: 'el-bloc.mp3', duration: 88.66, look: 'sun', genre: 'Dembow', notes: 'Honda Civic at 3am.' }),
     tape({ id: 'run-saloa-cover', pick: true, title: 'RUN', sub: 'Salóa remix', artist: 'Salóa', file: 'run-saloa-cover.mp3', duration: 156.813, look: 'slate', genre: 'Drum & Bass / Rock / Pop', notes: 'Soundtrack of a new start.', credits: "Remix of Owane's 'Run'" }),
     tape({ id: 'thin-air', pick: true, title: 'Thin Air', sub: 'cover', file: 'thin-air-cover.mp3', duration: 179.784, look: 'ice', genre: 'Metal', notes: "You've reached the peak.", credits: 'Written as a chillstep song in 2016 and re-made as a metal song in 2024' }),
-    tape({ id: 'encindio', pick: true, title: 'ENCINDIO', file: 'encindio.mp3', duration: 124.682, look: 'ember', genre: 'Extreme Merengue', notes: "You write merengue but you're a dubstep producer" }),
-    tape({ id: 'what-u-were-thinking', title: 'WHAT U WERE THINKING', file: 'what-u-were-thinking.mp3', duration: 99.971, look: 'jade', genre: 'Afro Beat', notes: "Falling in love when you shouldn't be." }),
-    tape({ id: 'amoeba', title: 'AMOEBA', file: 'amoeba.mp3', duration: 119.641, look: 'teal', genre: 'Experimental House', notes: 'This escaped the lab' }),
+    tape({ id: 'encindio', pick: true, title: 'INCENDIO', file: 'encindio.mp3', duration: 124.682, look: 'ember', genre: 'Extreme Merengue', notes: "You write merengue but you're a dubstep producer" }),
+    tape({ id: 'way-up', title: 'WAY UP', file: 'way-up.mp3', duration: 128.496, look: 'teal', genre: 'Favela Funk', notes: "Honda Civic at 3am (but you're in Brazil)" }),
+    tape({ id: 'goodbye', title: 'Goodbye', file: 'goodbye.mp3', duration: 286.25, look: 'ice' }),
+    tape({ id: 'stay-here-bootleg', title: 'Stay Here', sub: 'bootleg', file: 'stay-here-bootleg.mp3', duration: 197.669, look: 'rose', genre: 'Future House', credits: 'Bootleg of Fred V & Grafix\'s "Stay Here"' }),
     tape({ id: 'can-am', title: 'CAN AM', sub: 'track 4', file: 'can-am.mp3', duration: 81.267, look: 'sun', genre: 'Dembow', notes: '4 wheeler donuts on the salt flats' }),
     tape({ id: 'fin', title: 'FIN', sub: 'track 9', file: 'fin.mp3', duration: 39.497, look: 'sun', genre: 'Dembow', notes: 'Midnight drift' }),
-    tape({ id: 'asdfghjkl', title: 'asdfghjkl', file: 'asdfghjkl.mp3', duration: 44.304, look: 'rose', genre: 'Experimental Dembow', notes: 'Is mayonnaise an instrument?' }),
+    tape({ id: 'asdfghjkl', title: 'asdfghjkl', file: 'asdfghjkl.mp3', duration: 44.28, look: 'rose', genre: 'Experimental Dembow', notes: 'Is mayonnaise an instrument?' }),
     tape({ id: 'ignicion', title: 'IGNICIÓN', file: 'ignicion.mp3', duration: 127.765, look: 'flare', genre: 'Dembow / Rave', notes: "You write dembow but you're not latino" }),
     tape({ id: 'archangel-saloa-remix', title: 'Archangel', sub: 'Saloa remix', artist: 'Saloa', file: 'archangel-saloa-remix.mp3', duration: 217.94, look: 'teal', genre: 'Hardstyle (?)', notes: "It's just Dance Dance Revolution", credits: 'Remix of Pendulum\'s "Archangel"' }),
-    tape({ id: 'end-demo', title: 'end', sub: 'demo', file: 'end-demo.mp3', duration: 100.911, look: 'smoke', genre: 'Drum & Bass / Rock / Orchestral', notes: 'of the book of revelation' }),
+    tape({ id: 'end-demo', title: 'Pendulum Demo', file: 'end-demo.mp3', duration: 100.911, look: 'smoke', genre: 'Drum & Bass / Rock / Orchestral' }),
+    tape({ id: 'contrast', title: 'Contrast', file: 'contrast.mp3', duration: 162.216, look: 'navy', genre: 'Liquid Drum & Bass', notes: 'The one who got away', credits: 'Written 2011 · remastered 2026' }),
+    tape({ id: 'pendulum-demo-2', title: 'Pendulum Demo 2', file: 'pendulum-demo-2.mp3', duration: 137.04, look: 'ice', genre: 'Liquid Drum & Bass', notes: 'Running in the Rain' }),
+    tape({ id: 'what-u-were-thinking', title: 'WHAT U WERE THINKING', file: 'what-u-were-thinking.mp3', duration: 99.971, look: 'jade', genre: 'Afro Beat', notes: "Falling in love when you shouldn't be." }),
+    tape({ id: 'amoeba', title: 'AMOEBA', file: 'amoeba.mp3', duration: 119.641, look: 'teal', genre: 'Experimental House', notes: 'This escaped the lab' }),
     tape({ id: 'dystopia', title: 'Dystopia', file: 'dystopia.mp3', duration: 93.672, look: 'slate', genre: 'Drum & Bass', notes: 'smog fills your lungs.', credits: 'Written 2014 · remastered 2026' }),
     tape({ id: 'black', title: 'Black', file: 'black.mp3', duration: 139.152, look: 'ink', genre: 'Drum & Bass', notes: 'black as in hole.', credits: 'Written 2013 · remastered 2026' }),
     tape({ id: 'stay-dusk', title: 'STAY (DUSK)', sub: 'final master', file: 'stay-dusk-final-master.mp3', duration: 266.789, look: 'amber', genre: 'Jump-Up Drum & Bass', drawing: 'broken-heart' }),
@@ -1167,12 +1173,9 @@ button { font: inherit; color: inherit; }
     tape({ id: 'march-on-the-gates', title: 'March On The Gates', sub: '2023 VIP', file: 'march-on-the-gates-2023-vip.mp3', duration: 127.713, look: 'navy', genre: 'Dubstep', notes: 'Oppenheimer presses the red button' }),
     tape({ id: 'pulpo-riddim', title: 'PULPO RIDDIM', sub: 'track 8', file: 'pulpo-riddim.mp3', duration: 98.116, look: 'sun', genre: 'Dembow / Riddim Dubstep', notes: 'You get a Concussion' }),
     tape({ id: 'i-will-crush-you', title: 'I Will Crush You', file: 'i-will-crush-you.mp3', duration: 52.224, look: 'smoke', genre: 'Experimental', notes: 'sounds like trash compactor.', credits: 'Written 2014 · remastered 2026' }),
-    tape({ id: 'way-up', title: 'WAY UP', file: 'way-up.mp3', duration: 128.496, look: 'teal' }),
-    tape({ id: 'goodbye', title: 'Goodbye', file: 'goodbye.mp3', duration: 286.25, look: 'ice' }),
-    tape({ id: 'stay-here-bootleg', title: 'Stay Here', sub: 'bootleg', file: 'stay-here-bootleg.mp3', duration: 197.669, look: 'rose', credits: 'Bootleg of Fred V & Grafix\'s "Stay Here"' }),
     tape({ id: 'warlord', title: 'Warlord', file: 'warlord.mp3', duration: 190.276, look: 'ink' }),
     tape({ id: 'bass-soup-ii-revisited', title: 'Bass Soup II', sub: 'revisited', file: 'bass-soup-ii-revisited.mp3', duration: 210.39, look: 'jade' }),
-    tape({ id: 'untitled-2e1a3bfd', title: 'Untitled', file: 'untitled-2e1a3bfd.mp3', duration: 47.987, look: 'kraft', genre: 'Prosperity Gospel', notes: 'Prosperity Gospel.', credits: 'Lyrics mine · instruments AI' }),
+    tape({ id: 'untitled-2e1a3bfd', title: 'Bugatti Blessings', file: 'untitled-2e1a3bfd.mp3', duration: 47.987, look: 'kraft', genre: 'Prosperity Gospel', notes: 'Prosperity Gospel.', credits: 'Lyrics mine · instruments AI' }),
     tape({ id: 'good-deal', title: 'good deal', file: 'good-deal.mp3', duration: 100.968, look: 'moss', genre: 'Hip-hop', notes: 'Prosperity Gospel Diss.', credits: 'Lyrics mine · instruments AI' }),
     tape({ id: 'tomato', title: 'TOMATO', file: 'tomato.mp3', duration: 120.024, look: 'ruby', genre: 'Metal', notes: 'tomato tomato tomato tomato tomato tomato tomato tomato tomato tomato tomato tomato tomato tomato' })
   ];
@@ -1462,7 +1465,7 @@ button { font: inherit; color: inherit; }
     // seen from side B the reels swap sides and turn the other way
     const rl = back ? g.rR : g.rL, rr = back ? g.rL : g.rR;
     const al = back ? (g.nR % 1) * 360 : -(g.nL % 1) * 360, ar = back ? (g.nL % 1) * 360 : -(g.nR % 1) * 360;
-    const rls = rl.toFixed(1), rrs = rr.toFixed(1);
+    const rls = (Math.round(rl * 2) / 2).toFixed(1), rrs = (Math.round(rr * 2) / 2).toFixed(1);
     if (c.rl !== rls) { c.rl = rls; c.pl.setAttribute('r', rls); }
     if (c.rr !== rrs) { c.rr = rrs; c.pr.setAttribute('r', rrs); }
     c.hl.setAttribute('transform', `rotate(${al.toFixed(2)} ${HUB_L} ${HUB_Y})`);
@@ -1568,6 +1571,26 @@ button { font: inherit; color: inherit; }
     return false;
   }
   const popPx = () => G.tw * 0.42;
+  // The pile closes up or opens a gap: the tapes take their new places at once (one layout), then slide there
+  // from where they were. The slide is a compositor animation, so no layout or redraw while they move.
+  function shiftPile(change, ms) {
+    if (RM || S.view === 'player') { change(); return; }    // nothing to see behind the open deck
+    const items = [...stackEl.querySelectorAll('.stack-item')];
+    const before = items.map(i => i.getBoundingClientRect().top);
+    items.forEach(i => { if (i._slide) { i._slide.cancel(); i._slide = null; } });
+    change();
+    const vh = window.innerHeight;
+    items.forEach((it, k) => {
+      const r = it.getBoundingClientRect(), d = before[k] - r.top;
+      if (Math.abs(d) < 0.5 || it.offsetParent === null) return;
+      const seen = (top, bot) => bot > -60 && top < vh + 60;
+      if (!seen(r.top, r.bottom) && !seen(r.top + d, r.bottom + d)) return;   // off the screen before and after
+      const a = it.animate([{ transform: `translateY(${d.toFixed(1)}px)` }, { transform: 'translateY(0)' }],
+        { duration: ms || 380, easing: 'cubic-bezier(.22, .8, .24, 1)' });
+      it._slide = a;
+      a.onfinish = a.oncancel = () => { if (it._slide === a) it._slide = null; };
+    });
+  }
   const safeTop = () => parseFloat(getComputedStyle(probe).paddingTop) || 0;
   // turn a tape in the pile over to read side B. The tapes over it first slide down out of the way
   // (it stays where it is, so it never goes off the top of the screen); they slide back after it turns back.
@@ -1583,7 +1606,7 @@ button { font: inherit; color: inherit; }
       const open = hasNext(item);
       FOCUS.lock = item;
       setFocus(item);
-      if (open) item.classList.add('opened');
+      if (open) shiftPile(() => item.classList.add('opened'));
       revealTape(item);
       setTimeout(() => {
         if (item._turnSeq !== seq) return;
@@ -1594,7 +1617,7 @@ button { font: inherit; color: inherit; }
     } else {
       const back = () => {
         if (item._turnSeq !== seq) return;
-        item.classList.remove('opened');            // the tapes slide back over it
+        shiftPile(() => item.classList.remove('opened'));   // the tapes slide back over it
         if (FOCUS.lock === item) FOCUS.lock = null;
         queueFocus();
       };
@@ -1737,7 +1760,7 @@ button { font: inherit; color: inherit; }
     }
     root.style.setProperty('--tape-w', tw + 'px');
     G.tw = tw;
-    if (S.view === 'player' && !S.busy) app.classList.toggle('covered', deckCoversScreen());
+    if (S.view === 'player' && !S.busy) { const c = deckCoversScreen(); setCovered(c); shelfOutOfReach(!c); }
     placeDeck(false);
     setupViz();
   }
@@ -1775,26 +1798,48 @@ button { font: inherit; color: inherit; }
   }
 
   /* ---------- Views ---------- */
-  // when the open deck fills the screen, the pile behind it is not drawn at all (less work while a tape plays)
+  // When the open deck fills the screen, the tapes behind it are not drawn at all (less work while a tape plays).
+  // They are hidden with content-visibility: each tape keeps its finished style, so to hide them and show them
+  // again is quick. Hidden tapes cannot get focus, so the pile does not need 'inert' (that restyles every tape).
   let coverTimer = 0;
   function deckCoversScreen() {
     const f = G.full;
     return !!f && G.dw * f.s >= window.innerWidth * 0.98 && G.dh * f.s >= window.innerHeight * 0.98;
   }
+  function setCovered(on) { if (app.classList.contains('covered') !== on) app.classList.toggle('covered', on); }
+  function shelfOutOfReach(on) {
+    // big screens only: the pile stays in view behind a smaller deck
+    if (shelf.inert !== on) shelf.inert = on;
+  }
   function coverShelf() {
     clearTimeout(coverTimer);
-    if (S.view !== 'player') { app.classList.remove('covered'); return; }
+    if (S.view !== 'player') { setCovered(false); shelfOutOfReach(false); return; }
     // done while the deck is still growing: that move runs off the page's main thread, so the work does not show
-    coverTimer = setTimeout(() => app.classList.toggle('covered', S.view === 'player' && deckCoversScreen()), 480);
+    coverTimer = setTimeout(() => {
+      if (S.view !== 'player') return;
+      const c = deckCoversScreen();
+      setCovered(c);
+      shelfOutOfReach(!c);
+    }, 480);
+  }
+  // a finger on "Tapes": draw the pile behind the deck now, so the deck can move the moment the finger lifts
+  function readyShelf() {
+    if (S.view !== 'player' || S.busy || !app.classList.contains('covered')) return;
+    clearTimeout(coverTimer);
+    setCovered(false);
+    coverTimer = setTimeout(coverShelf, 1500);   // no tap after all: hide it again
   }
   function applyView(animate) {
     const full = S.view === 'player';
-    coverShelf();
     if (animate) S.morphUntil = performance.now() + 740;   // the frame loop holds its drawing while the deck moves
     app.dataset.view = S.view;
     deck.dataset.state = full ? 'full' : 'docked';
     deckBody.inert = !full;
-    shelf.inert = full;
+    // the pile behind the open deck: out of the screen reader at once, and its one button out of reach
+    if (full) shelf.setAttribute('aria-hidden', 'true'); else shelf.removeAttribute('aria-hidden');
+    if (full) vizRes(1);
+    helpBtn.inert = full;
+    coverShelf();
     dockHit.hidden = full;
     placeDeck(animate);
     updateCaption();
@@ -1907,7 +1952,7 @@ button { font: inherit; color: inherit; }
     if (FOCUS.item === item) FOCUS.item = null;
     void item.offsetWidth;
     item.classList.remove('no-anim');
-    item.classList.add('gone');                // the pile closes up
+    shiftPile(() => item.classList.add('gone'));   // the pile closes up
     await flyTo(fly, from, to, 'in');
 
     S.loaded = t;
@@ -1969,9 +2014,12 @@ button { font: inherit; color: inherit; }
     slot.classList.add('lifted');
     const item = itemFor(t), btn = item.querySelector('.tape-btn');
     drawStackTape(t);
-    item.classList.remove('gone');             // make room in the pile
-    const open = hasNext(item);
-    if (open) item.classList.add('opened');    // the tapes over it slide down out of the way
+    let open = false;
+    shiftPile(() => {
+      item.classList.remove('gone');             // make room in the pile
+      open = hasNext(item);
+      if (open) item.classList.add('opened');    // the tapes over it slide down out of the way
+    });
     await wait(300);
     if (S.view === 'player') { S.view = 'shelf'; applyView(true); await wait(760); }
     else await wait(140);
@@ -1999,7 +2047,7 @@ button { font: inherit; color: inherit; }
     item.classList.remove('pulled');
     sfx('drop');
     await wait(260);
-    item.classList.remove('opened');          // the tapes below slide back over it
+    shiftPile(() => item.classList.remove('opened'));   // the tapes below slide back over it
     await wait(open ? 380 : 0);
     queueFocus();
     done();
@@ -2020,12 +2068,14 @@ button { font: inherit; color: inherit; }
     const job = { t, url: null, failed: false };
     JOB.cur = job;
     fetch(t.src)
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
-      .then(bytes => {
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+      .then(blob => {
         if (JOB.cur !== job) return;
-        job.url = URL.createObjectURL(new Blob([bytes], { type: 'audio/mpeg' }));
+        // the browser keeps the file; the page gets a link to it (no copy of the bytes on the page)
+        job.url = URL.createObjectURL(blob.type === 'audio/mpeg' ? blob : blob.slice(0, blob.size, 'audio/mpeg'));
         takeBlob(job);
-        decodeTape(job, bytes);
+        (blob.arrayBuffer ? blob.arrayBuffer() : new Response(blob).arrayBuffer())
+          .then(bytes => { if (JOB.cur === job) decodeTape(job, bytes); }, () => {});
       })
       .catch(() => {
         if (JOB.cur !== job) return;
@@ -2527,7 +2577,7 @@ button { font: inherit; color: inherit; }
     }
     const ctx = litCanvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    Object.assign(VIZ, { ctx, w, h });
+    Object.assign(VIZ, { ctx, w, h, k: 1 });
     drawViz();
     litCanvas.hidden = !VIZ.was;
   }
@@ -2566,6 +2616,19 @@ button { font: inherit; color: inherit; }
     }
     return any;
   }
+  // the lit holes are drawn at the size the deck is shown: the closed deck is small, so its canvas has fewer pixels
+  function dockVizK() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1), s = G.dock ? G.dock.s : 1;
+    return clamp(Math.ceil((window.devicePixelRatio || 1) * s / dpr * 10) / 10, 0.5, 1);
+  }
+  function vizRes(k) {
+    if (!VIZ.ctx || !VIZ.w || VIZ.k === k) return;
+    const d = Math.min(2, window.devicePixelRatio || 1) * k;
+    VIZ.k = k;
+    litCanvas.width = Math.round(VIZ.w * d); litCanvas.height = Math.round(VIZ.h * d);
+    VIZ.ctx.setTransform(d, 0, 0, d, 0, 0);
+    drawViz();
+  }
   function drawViz() {
     const x = VIZ.ctx;
     if (!x || !VIZ.strips) return;
@@ -2583,7 +2646,7 @@ button { font: inherit; color: inherit; }
   }
 
   /* ---------- Motor + frame loop ---------- */
-  let raf = 0, lastT = 0, lastSync = 0, lastSave = 0, loadHintTimer = 0;
+  let raf = 0, lastT = 0, lastSync = 0, lastSave = 0, loadHintTimer = 0, lastDraw = 0, drawDt = 0;
   function updateMotor() {
     let m = 'idle';
     if (S.wind) m = S.wind.dir > 0 ? 'ff' : 'rew';
@@ -2620,18 +2683,29 @@ button { font: inherit; color: inherit; }
         if (now - lastSync > 2000) { lastSync = now; msPosition(); }
         if (now - lastSave > 5000) { lastSave = now; savePos(); }
       }
-      if (!morph) drawDeck(moving && !S.wasMorph ? dt : 0);
     }
-    let lit = false;
-    if (VIZ.ctx && !morph) {
-      const live = (S.motor === 'play' || (S.wind && !!CUE)) && decReady();
-      if (live) analyze(S.pos, rate);
-      lit = stepViz(dt || 1 / 60, live);
-      if (lit || VIZ.was) drawViz();
-      if (lit !== VIZ.was) litCanvas.hidden = !lit;    // nothing lit: no canvas to show
-      VIZ.was = lit;
+    // The open deck is drawn every frame. The closed deck is small: it is drawn 30 times a second, and it holds
+    // still while you scroll the pile (it catches up when the pile stops). Each drawing makes the browser redo
+    // the page picture, so fewer drawings leave the phone more time to move the pile.
+    const docked = S.view !== 'player';
+    drawDt = morph ? 0 : drawDt + dt;
+    let lit = VIZ.was;
+    if (!morph && !(docked && now - SCROLL.t < 250) && (!docked || now - lastDraw >= 31)) {
+      const ddt = Math.min(0.25, drawDt);
+      drawDt = 0; lastDraw = now;
+      if (t) drawDeck(moving && !S.wasMorph ? ddt : 0);
+      if (VIZ.ctx) {
+        vizRes(docked ? dockVizK() : 1);
+        const live = (S.motor === 'play' || (S.wind && !!CUE)) && decReady();
+        if (live) analyze(S.pos, rate);
+        lit = stepViz(ddt || 1 / 60, live);
+        if (lit || VIZ.was) drawViz();
+        if (lit !== VIZ.was) litCanvas.hidden = !lit;    // nothing lit: no canvas to show
+        VIZ.was = lit;
+      }
+      S.wasMorph = false;
     }
-    S.wasMorph = morph;
+    if (morph) S.wasMorph = true;
     if ((moving || lit || morph) && !raf) raf = requestAnimationFrame(frame);
   }
   function drawDeck(dt) {
@@ -2646,7 +2720,8 @@ button { font: inherit; color: inherit; }
   function counterRaw(t, pos) { const p = clamp(pos / t.duration, 0, 1); return (packR(p) - R0) / (RF - R0) * t.duration; }
   function renderCounter() {
     const raw = S.loaded ? counterRaw(S.loaded, S.pos) : 0;
-    const c = ((raw % 1000) + 1000) % 1000;
+    const c0 = ((raw % 1000) + 1000) % 1000;
+    const c = S.view === 'player' ? c0 : Math.floor(c0);   // the closed deck is small: no roll between numbers
     const u = c % 10, tens = Math.floor(c / 10) % 10, hund = Math.floor(c / 100) % 10;
     const roll = Math.max(0, u - 9);
     const vals = [hund + (tens === 9 ? roll : 0), tens + roll, u];
@@ -2809,6 +2884,7 @@ button { font: inherit; color: inherit; }
     caption.classList.add('nudge');
   });
   minimizeBtn.addEventListener('click', () => { if (!blocked('minimize')) minimize(); });
+  minimizeBtn.addEventListener('pointerdown', readyShelf, { passive: true });
   backdrop.addEventListener('click', () => { if (!blocked('minimize')) minimize(); });
   document.addEventListener('keydown', e => {
     if (S.view !== 'player' || S.busy) return;
