@@ -91,6 +91,7 @@ button { font: inherit; color: inherit; }
   transition: transform .7s var(--ease);
 }
 .shelf-inner { max-width: 420px; margin: 0 auto; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.app.covered .shelf-inner { visibility: hidden; }
 .shelf-head {
   display: flex;
   align-items: center;
@@ -129,18 +130,20 @@ button { font: inherit; color: inherit; }
 .stack-item.raised { z-index: 60 !important; }
 /* --pop: how far a tape comes up out of the pile */
 .stack-item { --pop: 0px; }
+/* each tape is its own layer: scrolling and the pop-out only move ready-made pictures, nothing is redrawn */
 .tape-wrap {
   position: absolute;
   inset: 0;
   transform: translateX(var(--nudge, 0px)) translateY(var(--pop)) rotate(var(--tilt, 0deg));
-  transition: transform .42s cubic-bezier(.2, .8, .2, 1);
+  translate: 0 0;
+  transition: transform .42s cubic-bezier(.2, .8, .2, 1), translate .42s cubic-bezier(.2, .8, .2, 1);
+  will-change: transform, translate;
 }
 @media (hover: hover) {
   .tape-wrap:hover { transform: translateX(var(--nudge, 0px)) translateY(calc(var(--pop) - 7px)) rotate(var(--tilt, 0deg)); }
 }
-/* the tape at the reading line comes part way out of the pile */
-.stack-item.focus { --pop: calc(var(--tape-w) * -0.13); }
-.stack-item.focus:first-child { --pop: 0px; }
+/* the tape at the reading line comes part way out of the pile (translate: only that one box restyles) */
+.stack-item.focus:not(:first-child) > .tape-wrap { translate: 0 calc(var(--tape-w) * -0.13); }
 /* a tape that turns over (or comes back from the deck): the tapes over it slide down out of the way */
 .stack-item.opened + .stack-item:not(.gone),
 .stack-item.opened + .stack-item.gone + .stack-item { margin-top: calc(var(--tape-w) * 0.1); }
@@ -170,7 +173,6 @@ button { font: inherit; color: inherit; }
   display: block;
   border-radius: 4% / 6.27%;
   box-shadow: 0 16px 22px -8px rgba(0, 0, 0, .65), 0 3px 6px rgba(0, 0, 0, .45);
-  transition: box-shadow .25s var(--ease);
 }
 .face-b, .flipped .face-a { visibility: hidden; }
 .flipped .face-b { visibility: visible; }
@@ -196,7 +198,6 @@ button { font: inherit; color: inherit; }
 .edge-l { left: calc(var(--th, 0px) * -1); transform: rotateY(-90deg); }
 .edge-r { right: calc(var(--th, 0px) * -1); transform: rotateY(90deg); }
 .stack-item.opened .face, .stack-item.pulled .face { box-shadow: 0 28px 30px -10px rgba(0, 0, 0, .7), 0 5px 10px rgba(0, 0, 0, .45); }
-.stack-item.focus .face { box-shadow: 0 22px 26px -9px rgba(0, 0, 0, .7), 0 4px 8px rgba(0, 0, 0, .45); }
 .flip-btn {
   position: absolute;
   right: 2.4%;
@@ -236,7 +237,7 @@ button { font: inherit; color: inherit; }
 }
 .pile-quiet { font: 400 12.5px/1.3 var(--font-type); color: var(--ink-soft); }
 .stack-item.pick .face { box-shadow: 0 0 0 2px rgba(255, 214, 120, .75), 0 0 22px 4px rgba(255, 190, 70, .5), 0 16px 22px -8px rgba(0, 0, 0, .65); }
-.stack-item.pick.opened .face, .stack-item.pick.pulled .face, .stack-item.pick.focus .face { box-shadow: 0 0 0 2px rgba(255, 214, 120, .85), 0 0 30px 7px rgba(255, 190, 70, .6), 0 28px 30px -10px rgba(0, 0, 0, .7); }
+.stack-item.pick.opened .face, .stack-item.pick.pulled .face { box-shadow: 0 0 0 2px rgba(255, 214, 120, .85), 0 0 30px 7px rgba(255, 190, 70, .6), 0 28px 30px -10px rgba(0, 0, 0, .7); }
 
 /* SVG cassette type */
 .cassette .cs-title { font-family: var(--font-hand); font-size: 92px; }
@@ -1634,22 +1635,40 @@ button { font: inherit; color: inherit; }
     if (item) item.classList.add('focus');
   }
   function queueFocus() { if (!FOCUS.raf) FOCUS.raf = requestAnimationFrame(updateFocus); }
+  // the tapes you can see in the pile, in order (class checks only: no layout is read)
+  function shelfItems() {
+    const touring = app.classList.contains('touring');
+    return [...stackEl.querySelectorAll('.stack-item')].filter(i => !i.classList.contains('is-out') && (!touring || i.classList.contains('tour-tape')));
+  }
   function updateFocus() {
     FOCUS.raf = 0;
-    const dockH = parseFloat(getComputedStyle(root).getPropertyValue('--dock-h')) || 0;
-    const bottom = window.innerHeight - dockH - 80, line = bottom * 0.36;
+    if (S.view !== 'shelf') return;
+    const bottom = window.innerHeight - (G.dockH || 0) - 80, line = bottom * 0.36;
     if (FOCUS.lock) {
       const r = FOCUS.lock.getBoundingClientRect();
       if (r.bottom > -40 && r.top < bottom + 40) { setFocus(FOCUS.lock); return; }
       flipStack(FOCUS.lock, false, true);   // a turned tape that scrolls away goes back
       return;
     }
-    const items = [...stackEl.querySelectorAll('.stack-item')].filter(i => i.offsetParent !== null && !i.classList.contains('is-out'));
+    // start from the tape that had focus and step up or down: a few reads a frame, not one per tape
+    const items = shelfItems();
+    if (!items.length) { setFocus(null); return; }
+    let k = Math.max(0, items.indexOf(FOCUS.item));
+    const strip = i => {
+      const r = items[i].getBoundingClientRect(), n = items[i + 1];
+      return [r.top, n && n.parentElement === items[i].parentElement ? n.getBoundingClientRect().top : r.bottom];
+    };
     let hit = null;
-    for (let k = 0; k < items.length && !hit; k++) {
-      const r = items[k].getBoundingClientRect(), n = items[k + 1];
-      const end = n && n.parentElement === items[k].parentElement ? n.getBoundingClientRect().top : r.bottom;
-      if (line >= r.top && line < end) hit = items[k];
+    for (let steps = 0; steps <= items.length; steps++) {
+      const [top, end] = strip(k);
+      if (line < top) { if (k === 0) break; k--; continue; }
+      if (line >= end) {
+        if (k === items.length - 1) break;
+        if (items[k + 1].getBoundingClientRect().top > line) break;   // the line is in the gap between two piles
+        k++; continue;
+      }
+      hit = items[k];
+      break;
     }
     setFocus(hit);
   }
@@ -1705,17 +1724,20 @@ button { font: inherit; color: inherit; }
       G.dock = { cx: vw - sar - 18 - (dh * s) / 2, cy: vh / 2, r: 90, s };
       root.style.setProperty('--dock-w', (dh * s).toFixed(1) + 'px');
       root.style.setProperty('--dock-h', '0px');
+      G.dockH = 0;
       tw = clamp(Math.floor((vh - sat - sab - 110) / 0.638), 200, Math.min(320, vw - dh * s - 90));
     } else {
       const s = Math.min((vw - 48) / dh, 330 / dh, (vh * 0.27) / dw);
       const dockH = dw * s;
       G.dock = { cx: vw / 2, cy: vh - sab - 14 - dockH / 2, r: 90, s };
       root.style.setProperty('--dock-h', dockH.toFixed(1) + 'px');
+      G.dockH = dockH;
       root.style.setProperty('--dock-w', '0px');
       tw = Math.max(220, Math.min(340, vw - 32));
     }
     root.style.setProperty('--tape-w', tw + 'px');
     G.tw = tw;
+    if (S.view === 'player' && !S.busy) app.classList.toggle('covered', deckCoversScreen());
     placeDeck(false);
     setupViz();
   }
@@ -1753,8 +1775,21 @@ button { font: inherit; color: inherit; }
   }
 
   /* ---------- Views ---------- */
+  // when the open deck fills the screen, the pile behind it is not drawn at all (less work while a tape plays)
+  let coverTimer = 0;
+  function deckCoversScreen() {
+    const f = G.full;
+    return !!f && G.dw * f.s >= window.innerWidth * 0.98 && G.dh * f.s >= window.innerHeight * 0.98;
+  }
+  function coverShelf() {
+    clearTimeout(coverTimer);
+    if (S.view !== 'player') { app.classList.remove('covered'); return; }
+    // done while the deck is still growing: that move runs off the page's main thread, so the work does not show
+    coverTimer = setTimeout(() => app.classList.toggle('covered', S.view === 'player' && deckCoversScreen()), 480);
+  }
   function applyView(animate) {
     const full = S.view === 'player';
+    coverShelf();
     if (animate) S.morphUntil = performance.now() + 740;   // the frame loop holds its drawing while the deck moves
     app.dataset.view = S.view;
     deck.dataset.state = full ? 'full' : 'docked';
@@ -1775,6 +1810,7 @@ button { font: inherit; color: inherit; }
     S.busy = true; S.view = 'shelf'; applyView(true);
     await wait(740);
     done();
+    queueFocus();
     dockHit.focus({ preventScroll: true });
   }
   function setLid(state) { deck.dataset.lid = state; }
@@ -2440,6 +2476,7 @@ button { font: inherit; color: inherit; }
     if (!w || !h) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     for (const c of [canvas, litCanvas]) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+    canvas.hidden = false;
     const p = VIZ.pitch;
     VIZ.cols = Math.max(4, Math.floor((w - 8) / p) + 1);
     VIZ.rows = Math.max(4, Math.floor((h - 8) / p) + 1);
@@ -2469,6 +2506,12 @@ button { font: inherit; color: inherit; }
         bx.beginPath(); bx.arc(x, y, 1.6, 0, Math.PI * 2); bx.fill();
       }
     }
+    // the holes do not change: keep them as a still picture (a background), not a live canvas
+    try {
+      grilleEl.style.backgroundImage = `url(${canvas.toDataURL('image/png')}), linear-gradient(180deg, #c4c5c0, #a9aaa5)`;
+      grilleEl.style.backgroundSize = '100% 100%, auto';
+      canvas.hidden = true;
+    } catch (e) { /* keep the canvas */ }
     // lit holes: one strip for each bar height, so a bar costs one draw a frame
     const spr = ['#ffb547', '#ff8a33', '#ff4a30', '#fff2d6'].map(col => sprite(p * 1.7, dpr, col));
     const size = p * 1.7, rows = VIZ.rows, r60 = rows * 0.6, r85 = rows * 0.85;
@@ -2486,6 +2529,7 @@ button { font: inherit; color: inherit; }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     Object.assign(VIZ, { ctx, w, h });
     drawViz();
+    litCanvas.hidden = !VIZ.was;
   }
   function analyze(pos, rate) {
     const d = DEC.data, sr = DEC.sr;
@@ -2584,6 +2628,7 @@ button { font: inherit; color: inherit; }
       if (live) analyze(S.pos, rate);
       lit = stepViz(dt || 1 / 60, live);
       if (lit || VIZ.was) drawViz();
+      if (lit !== VIZ.was) litCanvas.hidden = !lit;    // nothing lit: no canvas to show
       VIZ.was = lit;
     }
     S.wasMorph = morph;
@@ -3014,7 +3059,20 @@ button { font: inherit; color: inherit; }
     startTour();
   });
   window.addEventListener('resize', () => setTimeout(() => { positionTour(); queueFocus(); }, 140));
-  shelf.addEventListener('scroll', () => { queueFocus(); if (TOUR.active && !TOUR.hidden) positionTour(); }, { passive: true });
+  // While you scroll slowly, the tape at the reading line comes out as you pass it. While the pile moves fast,
+  // it waits until the pile slows down or stops: then only the scroll moves, which keeps a fling smooth.
+  const SCROLL = { y: 0, t: 0, v: 0, idle: 0, raf: 0 };
+  function scrollFrame(now) {
+    SCROLL.raf = 0;
+    const y = shelf.scrollTop, dt = now - SCROLL.t;
+    if (dt > 0 && dt < 200) SCROLL.v = SCROLL.v * 0.6 + (Math.abs(y - SCROLL.y) / dt) * 0.4; else SCROLL.v = 0;
+    SCROLL.y = y; SCROLL.t = now;
+    clearTimeout(SCROLL.idle);
+    if (SCROLL.v < 0.45) updateFocus();                      // under ~450 px a second
+    else SCROLL.idle = setTimeout(queueFocus, 120);
+    if (TOUR.active && !TOUR.hidden) positionTour();
+  }
+  shelf.addEventListener('scroll', () => { if (!SCROLL.raf) SCROLL.raf = requestAnimationFrame(scrollFrame); }, { passive: true });
 
   /* ---------- Start ---------- */
   $('#spindles').innerHTML = spindlesSVG();
